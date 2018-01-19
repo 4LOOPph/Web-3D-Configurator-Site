@@ -277,7 +277,7 @@ module.exports = module.exports.toString();
 /***/ "../../../../../src/app/fbxsample/fbxsample.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<div class=\"container-fluid\">\n  <div class=\"row\">\n    <div class=\"col-md-12\" id=\"rendererDiv\">\n      <div id=\"renderHere\"></div>\n    </div>\n  </div>\n</div>"
+module.exports = "<div class=\"container-fluid\">\n  <div class=\"row\">\n    <div class=\"col-md-3\">\n      <div class=\"form-group\">\n        <div class=\"col-md-12 mb-3\">\n          <select class=\"form-control\" id=\"inputGroupSelect01\" [(ngModel)]=\"appModels\" (change)=\"selectModel()\">\n            <option selected value=\"\">Select Model</option>\n            <option value=\"sofa\">Sofa</option>\n            <option value=\"bed_v1\">bedV1</option>\n          </select>\n        </div>\n      </div>\n    </div>\n    <div class=\"col-md-9\" id=\"rendererDiv\">\n      <div id=\"renderHere\"></div>\n    </div>\n  </div>\n</div>\n"
 
 /***/ }),
 
@@ -350,7 +350,12 @@ var FbxsampleComponent = (function () {
         renderer.setSize(innerW, window.innerHeight);
         document.getElementById('renderHere').style.cssText = 'margin-right: 50px; border: 1px solid black;';
         document.getElementById('renderHere').appendChild(renderer.domElement);
-        modelSofa();
+        if (appModel === 'sofa') {
+            modelSofa();
+        }
+        else if (appModel === 'bed_v1') {
+            modelBed_v1();
+        }
         window.addEventListener('resize', onWindowResize, false);
         function modelSofa() {
             var _textureLoader = new THREE.TextureLoader();
@@ -381,6 +386,53 @@ var FbxsampleComponent = (function () {
             });
         }
         this.functionModelSofa = modelSofa;
+        function modelBed_v1() {
+            var _textureLoader = new THREE.TextureLoader();
+            var mtlLoaderSofa = new THREE.MTLLoader();
+            mtlLoaderSofa.setBaseUrl('assets/models/Bed_v1/');
+            mtlLoaderSofa.setPath('assets/models/Bed_v1/');
+            mtlLoaderSofa.load('Bed.mtl', function (materials) {
+                materials.preload();
+                console.log('materials', materials);
+                var objLoaderOfficeChair = new THREE.OBJLoader();
+                objLoaderOfficeChair.setMaterials(materials);
+                objLoaderOfficeChair.setPath('assets/models/Bed_v1/');
+                objLoaderOfficeChair.load('Bed.obj', function (object) {
+                    object.scale.set(260, 260, 260);
+                    center3DModel(object);
+                    camera.position.z = 600;
+                    object.traverse(function (child) {
+                        if (child.material) {
+                            if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshPhongMaterial) {
+                                console.log('MeshPhongMaterial');
+                                if (child.material.name === "Base") {
+                                    child.material.map = _textureLoader.load('assets/models/Bed_v1/Bed_Base_AlbedoTransparency.jpg');
+                                    child.material.aoMap = _textureLoader.load('assets/models/Bed_v1/Bed_Base_AO.jpg');
+                                    child.material.metalnessMap = _textureLoader.load('assets/models/Bed_v1/Bed_Base_MetallicSmoothness.png');
+                                    child.material.normalMap = _textureLoader.load('assets/models/Bed_v1/Bed_Base_Normal.jpg');
+                                }
+                                if (child.material.name === "Pillows") {
+                                    child.material.map = _textureLoader.load('assets/models/Bed_v1/Bed_Pillows_AlbedoTransparency.jpg');
+                                    child.material.metalnessMap = _textureLoader.load('assets/models/Bed_v1/Bed_Pillows_MetallicSmoothness.png');
+                                    child.material.normalMap = _textureLoader.load('assets/models/Bed_v1/Bed_Pillows_Normal.jpg');
+                                }
+                                if (child.material.name === "Covers") {
+                                    child.material.map = _textureLoader.load('assets/models/Bed_v1/Bed_Covers_AlbedoTransparency.jpg');
+                                    child.material.aoMap = _textureLoader.load('assets/models/Bed_v1/Bed_Covers_AO.jpg');
+                                    child.material.metalnessMap = _textureLoader.load('assets/models/Bed_v1/Bed_Covers_MetallicSmoothness.png');
+                                    child.material.normalMap = _textureLoader.load('assets/models/Bed_v1/Bed_Covers_Normal.jpg');
+                                }
+                            }
+                            console.log('chld', child.material);
+                            child.material.needsUpdate = true;
+                        }
+                    });
+                    object.updateMatrix();
+                    scene.add(object);
+                });
+            });
+        }
+        this.functionModelBed_v1 = modelBed_v1;
         function onWindowResize() {
             camera.aspect = innerW / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -419,6 +471,60 @@ var FbxsampleComponent = (function () {
             return object.position.set(((thsOBJ.getCenter().x) * -1), (valY * -1) / 2, ((thsOBJ.getCenter().z) * -1));
         }
     };
+    FbxsampleComponent.prototype.selectModel = function () {
+        localStorage.setItem('app.model', this.appModels);
+        //this.showModel(this.appModels);
+        //location.reload();
+        console.log(this.appModels);
+        for (var i = 0; i < this.currentScene.children.length; i++) {
+            var child = this.currentScene.children[i];
+            console.log(child);
+            if (child.type === 'Group') {
+                this.currentScene.remove(child);
+                this.showModel(this.appModels);
+                break;
+            }
+        }
+    };
+    FbxsampleComponent.prototype.showModel = function (model) {
+        switch (model) {
+            case "sofa":
+                this.functionModelSofa();
+                break;
+            case "bed_v1":
+                this.functionModelBed_v1();
+                break;
+            default:
+                break;
+        }
+    };
+    FbxsampleComponent.prototype.setTextureTop = function (texture) {
+        if (texture == "tableture") {
+            var url = "assets/models/Table/Gio_Normal.jpn";
+            console.log(this.tableObject);
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.crossOrigin = "Anonymous";
+            var texturePainting_1 = textureLoader.load(url);
+            this.tableObject.traverse(function (child) {
+                if (child.material) {
+                    if (child.material.name == "MeshPhongMaterial") {
+                        if (texturePainting_1) {
+                            child.material.map = texturePainting_1;
+                            child.material.needsUpdate = true;
+                        }
+                    }
+                }
+            });
+        }
+        else {
+            localStorage.setItem('app.texture.top', texture);
+            location.reload();
+        }
+    };
+    FbxsampleComponent.prototype.setTextureLegs = function (texture) {
+        localStorage.setItem('app.texture.legs', texture);
+        location.reload();
+    };
     FbxsampleComponent = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["n" /* Component */])({
             selector: 'app-fbxsample',
@@ -455,7 +561,7 @@ module.exports = module.exports.toString();
 /***/ "../../../../../src/app/furniture/furniture.component.html":
 /***/ (function(module, exports) {
 
-module.exports = "<div class=\"container-fluid\">\r\n  <div class=\"row\">\r\n    <div class=\"col-md-3\">\r\n      <div class=\"form-group\">\r\n        <div class=\"col-md-12 mb-3\">\r\n          <select class=\"form-control\" id=\"inputGroupSelect01\" [(ngModel)]=\"appModels\" (change)=\"selectModel()\">\r\n            <option selected value=\"\">Select Model</option>\r\n            <option value=\"chair\">Chair</option>\r\n            <option value=\"officechair\">Office Chair</option>\r\n            <option value=\"bed\">Bed</option>\r\n            <option value=\"table\">Table</option>\r\n            <option value=\"sofa\">Sofa</option>\r\n          </select>\r\n        </div>\r\n      </div>\r\n      <div id=\"accordion\" role=\"tablist\">\r\n        <div class=\"card mb-1\">\r\n          <div class=\"card-header\" role=\"tab\" id=\"headingOne\">\r\n            <h5 class=\"mb-0\">\r\n              <a role=\"button\" aria-expanded=\"true\" aria-controls=\"collapseOne\">\r\n                Sizes\r\n              </a>\r\n            </h5>\r\n          </div>\r\n          <div class=\"card-body\">\r\n            <div class=\"form-group\">\r\n              <div class=\"col-md-12 mb-3\">\r\n                <select class=\"form-control\" id=\"inputGroupSelect01\">\r\n                  <option selected>Choose...</option>\r\n                  <option value=\"1\">One</option>\r\n                  <option value=\"2\">Two</option>\r\n                  <option value=\"3\">Three</option>\r\n                </select>\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </div>\r\n        <div class=\"card mb-1\">\r\n          <div class=\"card-header\" role=\"tab\" id=\"headingTwo\">\r\n            <h5 class=\"mb-0\">\r\n              <a role=\"button\" aria-expanded=\"false\" aria-controls=\"collapseTwo\">\r\n                Top\r\n              </a>\r\n            </h5>\r\n          </div>\r\n          <div class=\"card-body\">\r\n            <div class=\"row\">\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/1.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('1');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/2.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('2');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/3.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('3');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/4.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('4');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/5.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('5');\">\r\n              </div>\r\n            </div>\r\n            <div class=\"row mt-2\">\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/6.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('6');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/7.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('7');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/8.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('8');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/9.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('9');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/9.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('tableture');\">\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </div>\r\n        <div class=\"card\">\r\n          <div class=\"card-header\" role=\"tab\" id=\"headingThree\">\r\n            <h5 class=\"mb-0\">\r\n              <a role=\"button\" aria-expanded=\"false\" aria-controls=\"collapseThree\">\r\n                Legs and Rails\r\n              </a>\r\n            </h5>\r\n          </div>\r\n          <div class=\"card-body\">\r\n            <div class=\"row\">\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/1.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('1');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/2.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('2');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/3.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('3');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/4.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('4');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/5.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('5');\">\r\n              </div>\r\n            </div>\r\n            <div class=\"row mt-2\">\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/6.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('6');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/7.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('7');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/8.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('8');\">\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </div>\r\n    </div>\r\n    <div class=\"col-md-9\" id=\"rendererDiv\">\r\n      <div id=\"renderHere\"></div>\r\n    </div>\r\n  </div>\r\n</div>\r\n"
+module.exports = "<div class=\"container-fluid\">\r\n  <div class=\"row\">\r\n    <div class=\"col-md-3\">\r\n      <div class=\"form-group\">\r\n        <div class=\"col-md-12 mb-3\">\r\n          <select class=\"form-control\" id=\"inputGroupSelect01\" [(ngModel)]=\"appModels\" (change)=\"selectModel()\">\r\n            <option selected value=\"\">Select Model</option>\r\n            <option value=\"chair\">Chair</option>\r\n            <option value=\"officechair\">Office Chair</option>\r\n            <option value=\"bed\">Bed</option>\r\n            <option value=\"table\">Table</option>\r\n            <option value=\"sofa\">Sofa</option>\r\n            <option value=\"bed_v1\">bedV1</option>\r\n          </select>\r\n        </div>\r\n      </div>\r\n      <div id=\"accordion\" role=\"tablist\">\r\n        <div class=\"card mb-1\">\r\n          <div class=\"card-header\" role=\"tab\" id=\"headingOne\">\r\n            <h5 class=\"mb-0\">\r\n              <a role=\"button\" aria-expanded=\"true\" aria-controls=\"collapseOne\">\r\n                Sizes\r\n              </a>\r\n            </h5>\r\n          </div>\r\n          <div class=\"card-body\">\r\n            <div class=\"form-group\">\r\n              <div class=\"col-md-12 mb-3\">\r\n                <select class=\"form-control\" id=\"inputGroupSelect01\">\r\n                  <option selected>Choose...</option>\r\n                  <option value=\"1\">One</option>\r\n                  <option value=\"2\">Two</option>\r\n                  <option value=\"3\">Three</option>\r\n                </select>\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </div>\r\n        <div class=\"card mb-1\">\r\n          <div class=\"card-header\" role=\"tab\" id=\"headingTwo\">\r\n            <h5 class=\"mb-0\">\r\n              <a role=\"button\" aria-expanded=\"false\" aria-controls=\"collapseTwo\">\r\n                Top\r\n              </a>\r\n            </h5>\r\n          </div>\r\n          <div class=\"card-body\">\r\n            <div class=\"row\">\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/1.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('1');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/2.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('2');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/3.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('3');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/4.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('4');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/5.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('5');\">\r\n              </div>\r\n            </div>\r\n            <div class=\"row mt-2\">\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/6.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('6');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/7.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('7');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/8.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('8');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/9.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('9');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/top/9.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureTop('tableture');\">\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </div>\r\n        <div class=\"card\">\r\n          <div class=\"card-header\" role=\"tab\" id=\"headingThree\">\r\n            <h5 class=\"mb-0\">\r\n              <a role=\"button\" aria-expanded=\"false\" aria-controls=\"collapseThree\">\r\n                Legs and Rails\r\n              </a>\r\n            </h5>\r\n          </div>\r\n          <div class=\"card-body\">\r\n            <div class=\"row\">\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/1.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('1');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/2.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('2');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/3.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('3');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/4.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('4');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/5.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('5');\">\r\n              </div>\r\n            </div>\r\n            <div class=\"row mt-2\">\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/6.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('6');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/7.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('7');\">\r\n              </div>\r\n              <div class=\"card ml-2\">\r\n                <img src=\"./assets/img/table/8.jpg\" alt=\"Card image cap\" style=\"width: 45px;height: 45px;\" (click)=\"setTextureLegs('8');\">\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </div>\r\n    </div>\r\n    <div class=\"col-md-9\" id=\"rendererDiv\">\r\n      <div id=\"renderHere\"></div>\r\n    </div>\r\n  </div>\r\n</div>\r\n"
 
 /***/ }),
 
@@ -506,7 +612,7 @@ var FurnitureComponent = (function () {
         }
         var scene = new THREE.Scene();
         this.currentScene = scene;
-        var camera = new THREE.PerspectiveCamera(75, innerW / window.innerHeight, 0.1, 1000);
+        var camera = new THREE.PerspectiveCamera(75, innerW / window.innerHeight, 0.1, 2500);
         camera.position.z = 250;
         // camera.position.x = 400;
         // camera.position.y = 150;
@@ -558,6 +664,11 @@ var FurnitureComponent = (function () {
         else if (appModel === 'sofa') {
             backgroundMesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 10, 10, 10), new THREE.MeshBasicMaterial({
                 map: modelSofa()
+            }));
+        }
+        else if (appModel === 'bed_v1') {
+            backgroundMesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 10, 10, 10), new THREE.MeshBasicMaterial({
+                map: modelBed_v1()
             }));
         }
         else {
@@ -737,6 +848,7 @@ var FurnitureComponent = (function () {
         }
         ;
         this.tableObject = tableObject;
+        this.functionModelTest = modelNewTable;
         function modelSofa() {
             var _textureLoader = new THREE.TextureLoader();
             var objLoaderOfficeChair = new THREE.OBJLoader();
@@ -761,7 +873,57 @@ var FurnitureComponent = (function () {
             });
         }
         this.functionModelSofa = modelSofa;
-        this.functionModelTest = modelNewTable;
+        function modelBed_v1() {
+            var _textureLoader = new THREE.TextureLoader();
+            var mtlLoaderSofa = new THREE.MTLLoader();
+            mtlLoaderSofa.setBaseUrl('assets/models/Bed_v1/');
+            mtlLoaderSofa.setPath('assets/models/Bed_v1/');
+            mtlLoaderSofa.load('Bed.mtl', function (materials) {
+                materials.preload();
+                console.log('materials', materials);
+                var objLoaderOfficeChair = new THREE.OBJLoader();
+                objLoaderOfficeChair.setMaterials(materials);
+                objLoaderOfficeChair.setPath('assets/models/Bed_v1/');
+                objLoaderOfficeChair.load('Bed.obj', function (object) {
+                    object.scale.set(260, 260, 260);
+                    center3DModel(object);
+                    camera.position.z = 600;
+                    object.traverse(function (child) {
+                        if (child.material) {
+                            if (child instanceof THREE.Mesh) {
+                                console.log('THREE.Mesh');
+                                child.geometry.computeVertexNormals();
+                            }
+                            if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshPhongMaterial) {
+                                console.log('MeshPhongMaterial');
+                                if (child.material.name === "Base") {
+                                    child.material.map = _textureLoader.load('assets/models/Bed_v1/Bed_Base_AlbedoTransparency.jpg');
+                                    child.material.aoMap = _textureLoader.load('assets/models/Bed_v1/Bed_Base_AO.jpg');
+                                    child.material.metalnessMap = _textureLoader.load('assets/models/Bed_v1/Bed_Base_MetallicSmoothness.png');
+                                    child.material.normalMap = _textureLoader.load('assets/models/Bed_v1/Bed_Base_Normal.jpg');
+                                }
+                                if (child.material.name === "Pillows") {
+                                    child.material.map = _textureLoader.load('assets/models/Bed_v1/Bed_Pillows_AlbedoTransparency.jpg');
+                                    child.material.metalnessMap = _textureLoader.load('assets/models/Bed_v1/Bed_Pillows_MetallicSmoothness.png');
+                                    child.material.normalMap = _textureLoader.load('assets/models/Bed_v1/Bed_Pillows_Normal.jpg');
+                                }
+                                if (child.material.name === "Covers") {
+                                    child.material.map = _textureLoader.load('assets/models/Bed_v1/Bed_Covers_AlbedoTransparency.jpg');
+                                    child.material.aoMap = _textureLoader.load('assets/models/Bed_v1/Bed_Covers_AO.jpg');
+                                    child.material.metalnessMap = _textureLoader.load('assets/models/Bed_v1/Bed_Covers_MetallicSmoothness.png');
+                                    child.material.normalMap = _textureLoader.load('assets/models/Bed_v1/Bed_Covers_Normal.jpg');
+                                }
+                            }
+                            console.log('chld', child.material);
+                            child.material.needsUpdate = true;
+                        }
+                    });
+                    object.updateMatrix();
+                    scene.add(object);
+                });
+            });
+        }
+        this.functionModelBed_v1 = modelBed_v1;
         function onWindowResize() {
             camera.aspect = innerW / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -803,7 +965,7 @@ var FurnitureComponent = (function () {
     };
     FurnitureComponent.prototype.selectModel = function () {
         localStorage.setItem('app.model', this.appModels);
-        this.showModel(this.appModels);
+        //this.showModel(this.appModels);
         //location.reload();
         console.log(this.appModels);
         for (var i = 0; i < this.currentScene.children.length; i++) {
@@ -832,6 +994,9 @@ var FurnitureComponent = (function () {
                 break;
             case "sofa":
                 this.functionModelSofa();
+                break;
+            case "bed_v1":
+                this.functionModelBed_v1();
                 break;
             default:
                 break;
