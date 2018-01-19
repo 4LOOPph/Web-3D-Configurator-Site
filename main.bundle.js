@@ -166,30 +166,15 @@ var ROUTES = [
     {
         path: '', component: __WEBPACK_IMPORTED_MODULE_3__layout_basiclayout_basiclayout_component__["a" /* BasiclayoutComponent */],
         children: [
-            { path: 'furnitures', component: __WEBPACK_IMPORTED_MODULE_0__furniture_furniture_component__["a" /* FurnitureComponent */] }
-        ]
-    },
-    {
-        path: '', component: __WEBPACK_IMPORTED_MODULE_3__layout_basiclayout_basiclayout_component__["a" /* BasiclayoutComponent */],
-        children: [
+            { path: 'furnitures', component: __WEBPACK_IMPORTED_MODULE_0__furniture_furniture_component__["a" /* FurnitureComponent */] },
             { path: 'cars', component: __WEBPACK_IMPORTED_MODULE_1__cars_cars_component__["a" /* CarsComponent */] },
-        ]
-    },
-    {
-        path: '', component: __WEBPACK_IMPORTED_MODULE_3__layout_basiclayout_basiclayout_component__["a" /* BasiclayoutComponent */],
-        children: [
             { path: 'furniture2', component: __WEBPACK_IMPORTED_MODULE_2__furniture2_furniture2_component__["a" /* Furniture2Component */] },
-        ]
-    },
-    {
-        path: '', component: __WEBPACK_IMPORTED_MODULE_3__layout_basiclayout_basiclayout_component__["a" /* BasiclayoutComponent */],
-        children: [
             { path: 'fbxsample', component: __WEBPACK_IMPORTED_MODULE_4__fbxsample_fbxsample_component__["a" /* FbxsampleComponent */] },
             { path: 'test', component: __WEBPACK_IMPORTED_MODULE_5__test_test_component__["a" /* TestComponent */] },
         ]
     },
     // Handle all other routes
-    { path: '**', redirectTo: 'furnitures' }
+    { path: '**', redirectTo: 'fbxsample' }
 ];
 
 
